@@ -3,6 +3,7 @@ import random
 import numpy as np
 from collections import deque
 from snake import SnakeGame, Direction, Point
+from model import Linear_QNet, QTrainer
 
 MAX_MEMORY = 100_000
 BATCH_SIZE = 1000
@@ -12,10 +13,10 @@ class Agent:
     def __init__(self): 
         self.number_games = 0
         self.epsilon = 0 #randomness
-        self.gamma = 0 #discount rate
+        self.gamma = 0.9 #discount rate, must be smaller than 1
         self.memory = deque(maxlen = MAX_MEMORY) #if exceeds memory, pops left
-        self.model = None
-        self.trainer = None
+        self.model = Linear_QNet(11, 256, 3)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
 
     
     def get_state(self, game):
@@ -80,7 +81,7 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, done)
 
     def get_action(self, state):
-        self.epsilon = 80 - self.n_games
+        self.epsilon = 80 - self.number_games
         final_move = [0,0,0]
         if random.randint(0, 200) < self.epsilon:
             move = random.randint(0, 2)
@@ -125,6 +126,7 @@ def train():
 
             if score > best_score:
                 best_score = score
+                agent.model.save()
                 
             print('Game', agent.number_games, 'Score', score, 'Current Best', best_score)
 
